@@ -1,10 +1,6 @@
-# asyn_fifo
+# Ahb-lite
 
-This project is nearing completion, welcome to provide suggestions.
+    ver0.1: initial project, finish ahb-lite interface, but there aren't any master or slave.
 
 ## Reference
-[1] Clifford E. Cummings, Synthesis and Scripting Techniques for Designing MultiAsynchronous Clock Designs, 2001
-
-[2] Clifford E. Cummings, Simulation and Synthesis Techniques for Asynchronous FIFO Design, 2002
-
-[3] Clifford E. Cummings, Clock Domain Crossing (CDC) Design & Verification Techniques Using SystemVerilog, 2008
+    none
