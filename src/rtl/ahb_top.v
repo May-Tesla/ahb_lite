@@ -37,13 +37,13 @@ module ahb_top(
     wire [3:0]     s_hprot;
     wire [1:0]     s_htrans;
     wire           s_hmastlock;
-    wire           s_hready = hready;
+    wire           s_hready_in = hready;
     wire [31:0]    s_hwdata;
     // wire [3:0] s_hmaster;
     // wire s_hwstrb;
     // wire s_hexcl;
     // wire s_hnonsec;
-    wire [NUM_S-1:0] s_hreadyout;
+    wire [NUM_S-1:0] s_hready_out;
     wire [NUM_S-1:0] s_hresp;
     wire [31:0] s_hrdata [NUM_S-1:0];
     // wire [NUM_S-1:0] hexokey;
@@ -80,14 +80,14 @@ module ahb_top(
         .HPROT       ( s_hprot       ),
         .HTRANS      ( s_htrans      ),
         .HMASTLOCK   ( s_hmastlock   ),
-        .HREADY      ( s_hready      ),
+        .HREADYin    ( s_hready_in   ),
         // .HMASTER     ( s_hmaster     ),
         // .HWSTRB      ( s_hwstrb      ),
         // .HEXCL       ( s_hexcl       ),
         // .HNONSEC     ( s_hnonsec     ),
         .HWDATA      ( s_hwdata      ),
         .HRESP       ( s_hresp[0]    ),
-        .HREADYOUT   ( s_hreadyout[0]   ),
+        .HREADYout   ( s_hready_out[0] ),
         // .HEXOKEY     ( s_hexokey[0]  ),
         .HRDATA      ( s_hrdata[0]   )
     );
@@ -128,17 +128,17 @@ module ahb_top(
         .S_HRDATA0   ( s_hrdata[0]   ),   // input from slave
         .S_HRESP0    ( s_hresp[0]    ),
         // .S_HEXOKEY0  ( s_hexokey[0]  ),
-        .S_HREADY0   ( s_hreadyout[0]   ),
+        .S_HREADY0   ( s_hready_out[0] ),
 
         .S_HRDATA1   ( s_hrdata[1]   ),   // input from slave
         .S_HRESP1    ( s_hresp[1]    ),
         // .S_HEXOKEY1  ( s_hexokey[1]  ),
-        .S_HREADY1   ( s_hreadyout[1]   ),
+        .S_HREADY1   ( s_hready_out[1] ),
 
         .S_HRDATA2   ( s_hrdata[2]   ),   // input from slave
         .S_HRESP2    ( s_hresp[2]    ),
         // .S_HEXOKEY2  ( s_hexokey[2]  ),
-        .S_HREADY2   ( s_hreadyout[2]   ),
+        .S_HREADY2   ( s_hready_out[2] ),
 
         .HRDATA      ( m_hrdata      ),   // output to master
         .HRESP       ( m_hresp       ),

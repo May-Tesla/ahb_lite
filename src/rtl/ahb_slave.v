@@ -13,7 +13,7 @@ module ahb_slave(
 	input wire [3:0] HPROT,
     input wire [1:0] HTRANS,
     input wire HMASTERLOCK,
-	input wire HREADY,
+	input wire HREADYin,
 	// input wire [3:0] HMASTER,
 	// input wire HWSTRB,
 	// input wire HEXCL,
