@@ -74,7 +74,89 @@ reg [15:0] mask;
 reg [15:0] split_or;
 reg [3:0] grant_id_r;
 
-
+   assign HRESP = 2'b00; // `HRESP_OKAY;
+   //---------------------------------------------------
+   // CSR access signals
+   localparam T_ADDR_WID = 8;
+   reg  [T_ADDR_WID-1:0] T_ADDR;
+   reg                   T_WREN;
+   reg                   T_RDEN;
+   reg  [31:0]           T_WDATA; // should be valid during T_WREN
+   wire [31:0]           T_RDATA; // should be valid after one cycle from T_RDEN
+   reg  [ 2:0]           T_SIZE;
+   //-------------------------------------------------
+   reg [2:0] state;
+   localparam STH_IDLE   = 3'h0,
+              STH_WRITE0 = 3'h1,
+              STH_WRITE1 = 3'h2,
+              STH_READ0  = 3'h3, 
+              STH_READ1  = 3'h4;
+   //-------------------------------------------------
+   always @ (posedge HCLK or negedge HRESETn) begin
+       if (HRESETn==0) begin
+           HRDATA    <=  ~'h0;
+           HREADYout <=  1'b1;
+           T_ADDR    <=   'h0;
+           T_WREN    <=  1'b0;
+           T_RDEN    <=  1'b0;
+           T_WDATA   <=  ~'h0;
+           T_SIZE    <=  3'h0;
+           state     <= STH_IDLE;
+       end else begin // if (HRESETn==0) begin
+           case (state)
+           STH_IDLE: begin
+                T_RDEN    <= 1'b0;
+                T_WREN    <= 1'b0;
+                if (HSEL && HREADYin) begin
+                   case (HTRANS)
+                   2'b00, 2'b01: begin //`HTRANS_IDLE, `HTRANS_BUSY
+                          HREADYout <= 1'b1;
+                          T_RDEN    <= 1'b0;
+                          T_WREN    <= 1'b0;
+                          state     <= STH_IDLE;
+                    end // HTRANS_IDLE or HTRANS_BUSY
+                   2'b10, 2'b11: begin //`HTRANS_NONSEQ, `HTRANS_SEQ
+                          HREADYout <= 1'b0;
+                          T_ADDR    <= HADDR[T_ADDR_WID-1:0];
+                          T_SIZE    <= HSIZE;
+                          if (HWRITE) begin // write
+                              state  <= STH_WRITE0;
+                          end else begin // read
+                              T_RDEN <= 1'b1; //byte_enable(HADDR[1:0], HSIZE);
+                              state  <= STH_READ0;
+                          end
+                    end // HTRANS_NONSEQ or HTRANS_SEQ
+                   endcase // HTRANS
+                end else begin// if (HSEL && HREADYin)
+                    T_WREN    <= 1'b0;
+                    T_RDEN    <= 1'b0;
+                    HREADYout <= 1'b1;
+                end
+                end // STH_IDLE
+           STH_WRITE0: begin
+                     T_WREN    <= 1'b1;
+                     T_WDATA   <= HWDATA;
+                     HREADYout <= 1'b1;
+                     state     <= STH_WRITE1;
+                end // STH_WRITE0
+           STH_WRITE1: begin
+                     T_WREN    <= 1'b0;
+                     T_WDATA   <= 32'b0;
+                     HREADYout <= 1'b1;
+                     state     <= STH_IDLE;
+                end // STH_WRITE1
+           STH_READ0: begin
+                    T_RDEN    <= 1'b0;
+                    state     <= STH_READ1;
+                end // STH_READ0
+           STH_READ1: begin
+                    HREADYout <= 1'b1;
+                    HRDATA    <= T_RDATA;
+                    state     <= STH_IDLE;
+                end // STH_READ1
+           endcase // state
+       end // if (HRESETn==0)
+   end // always
 
 endmodule
 
