@@ -48,7 +48,7 @@ module ahb_top(
     wire [31:0] s_hrdata [NUM_S-1:0];
     // wire [NUM_S-1:0] hexokey;
 
-    ahb_master u_ahb_master(
+    ahb_master u_ahb_master (
         .HCLK      ( sys_clk     ),
         .HRESETn   ( sys_rstn    ),
         .HADDR     ( m_haddr     ),
@@ -69,7 +69,7 @@ module ahb_top(
         .HRDATA    ( m_hrdata    )
     );
 
-    ahb_slave u0_ahb_slave(
+    ahb_slave u0_ahb_slave (
         .HCLK        ( sys_clk       ),
         .HRESETn     ( sys_rstn      ),
         .HSEL        ( s_hsel[0]     ),
@@ -92,9 +92,9 @@ module ahb_top(
         .HRDATA      ( s_hrdata[0]   )
     );
 
-    ahb_bus#(
+    ahb_bus #(
         .NUM_S       ( 3 )
-    )u_ahb_bus(
+    ) u_ahb_bus (
         .HCLK        ( sys_clk     ),
         .HRESETn     ( sys_rstn    ),
 

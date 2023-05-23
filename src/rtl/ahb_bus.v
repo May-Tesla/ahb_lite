@@ -131,7 +131,7 @@ module ahb_bus #(
     // assign HEXOKEY = hexokey;
     assign HRDATA = hrdata;
 
-    ahb_default_slave u0_ahb_default_slave(
+    ahb_default_slave u0_ahb_default_slave (
         .HCLK        ( sys_clk     ),
         .HRESETn     ( sys_rstn    ),
         .HSEL        ( hsel_d      ),
@@ -155,9 +155,9 @@ module ahb_bus #(
         .HRDATA      ( hrdata_d    )
     );
 
-    ahb_decoder#(
+    ahb_decoder #(
         .NUM_S   ( 3 )
-    )u_ahb_decoder(
+    ) u_ahb_decoder (
         .HCLK    ( sys_clk  ),
         .HRESETn ( sys_rstn ),
         .HADDR   ( haddr    ),
@@ -167,9 +167,9 @@ module ahb_bus #(
         .HSELd   ( hsel_d   )
     );
 
-    ahb_multiplexor#(
+    ahb_multiplexor #(
         .NUM_S      ( 3 )
-    )u_ahb_multiplexor(
+    ) u_ahb_multiplexor (
         .HCLK       ( sys_clk  ),
         .HRESETn    ( sys_rstn ),
 
