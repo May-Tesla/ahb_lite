@@ -5,30 +5,30 @@ module ahb_slave(
     input wire HCLK, 
     input wire HRESETn,
 
-	input wire HSEL,
+    input wire HSEL,
     input wire [31:0] HADDR,
-	input wire HWRITE,
-	input wire [2:0] HSIZE,
+    input wire HWRITE,
+    input wire [2:0] HSIZE,
     input wire [2:0] HBURST,
-	input wire [3:0] HPROT,
+    input wire [3:0] HPROT,
     input wire [1:0] HTRANS,
     input wire HMASTERLOCK,
-	input wire HREADYin,
-	// input wire [3:0] HMASTER,
-	// input wire HWSTRB,
-	// input wire HEXCL,
-	// input wire HNONSEC,
+    input wire HREADYin,
+    // input wire [3:0] HMASTER,
+    // input wire HWSTRB,
+    // input wire HEXCL,
+    // input wire HNONSEC,
 
     input wire [31:0] HWDATA,
 
-	output wire HRESP,
-	output reg  HREADYout,
-	output reg  [31:0]    HRDATA
+    output wire HRESP,
+    output reg  HREADYout,
+    output reg  [31:0] HRDATA
 );
-	
+    
     // parameter IDLE = 2'b00, BUSY = 2'b01, NONSEQ = 2'b10, SEQ = 2'b11;
     // parameter SINGLE = 3'b000, INCR = 3'b001, WRAP4 = 3'b010, INCR4 = 3'b011, WRAP8 = 3'b100, 
-    // 			INCR8 = 3'b101, WRAP16 = 3'b110, INCR16 = 3'b111;
+    //             INCR8 = 3'b101, WRAP16 = 3'b110, INCR16 = 3'b111;
     // parameter OKAY = 2'b00, ERROR = 2'b01, RETRY = 2'b10, SPLIT = 2'b11;
 
     //slave list
@@ -157,8 +157,33 @@ module ahb_slave(
         end // if (HRESETn==0)
     end // always
 
+    // ---- ---- memory start ---- ----
+    parameter ADDR_WIDTH = 4;
+    parameter MEM_DEPTH = 2**ADDR_WIDTH;
+
+    reg  [31:0] sram_mem[0:MEM_DEPTH-1];
+    wire wren;
+    wire [ADDR_WIDTH-1:0] waddr;
+    wire [31:0] wdata;
+    wire [ADDR_WIDTH-1:0] raddr;
+    wire [31:0] rdata;
+
+    assign wren = T_WREN;
+    assign raddr = T_ADDR;
+    assign T_RDATA = rdata;
+    assign waddr = T_ADDR;
+    assign wdata = T_WDATA;
+
+    integer i;
+    initial begin
+        for(i=0; i<MEM_DEPTH; i=i+1)
+            sram_mem[i] <= 32'b0;
+    end
+
+    always @(posedge HCLK ) begin
+        if(wren) sram_mem[waddr] <= wdata;
+    end
+
+    assign rdata = sram_mem[raddr];
+    // ---- ---- memory end ---- ----
 endmodule
-
-
-		
-			
