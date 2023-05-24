@@ -23,7 +23,7 @@ module ahb_slave(
 
     output wire HRESP,
     output reg  HREADYout,
-    output reg  [31:0] HRDATA
+    output wire [31:0] HRDATA
 );
     
     // parameter IDLE = 2'b00, BUSY = 2'b01, NONSEQ = 2'b10, SEQ = 2'b11;
@@ -32,133 +32,84 @@ module ahb_slave(
     // parameter OKAY = 2'b00, ERROR = 2'b01, RETRY = 2'b10, SPLIT = 2'b11;
 
     //slave list
-    reg ssel;
-    reg [31:0] saddr;
-    reg [31:0] swdata;
-    reg swrite;
-    reg [1:0] strans;
-    reg [2:0] ssize;
-    reg [2:0] sburst;
-    reg [3:0] smaster;
-    reg [3:0] sprot;
-    reg smasterlock;
-    reg sready;
-    reg [1:0] sresp;
-    reg [31:0] srdata;
-    reg [3:0] grant_id;
-    wire lock_or;
-    reg lock_or_r;
-    wire lock_detect_n;
-    reg [3:0] hmaster;
-    reg [3:0] hmaster_r;
-    wire hmasterlock;
-    wire [1:0] htrans;
-    wire [31:0] haddr;
-    wire hwrite;
-    wire [2:0] hsize;
-    wire [2:0] hburst;
-    wire [3:0] hprot;
-    reg [3:0] burst_count;
-    reg grant_enable;
-    wire [3:0] slave_sel;
-    wire [3:0] hsel;
-    reg [3:0] data_mux;
-    wire [31:0] hwdata;
-    reg [31:0] hrdata;
-    reg [1:0] hresp;
-    reg hready;
-    wire [15:0] hsplit;
-    reg [15:0] mask;
-    reg [15:0] split_or;
-    reg [3:0] grant_id_r;
 
     assign HRESP = 2'b00; // `HRESP_OKAY;
     //---------------------------------------------------
     // CSR access signals
-    localparam T_ADDR_WID = 8;
+    localparam T_ADDR_WID = 4;
     reg  [T_ADDR_WID-1:0] T_ADDR;
     reg                   T_WREN;
-    reg                   T_RDEN;
+    // reg                   T_RDEN;
     reg  [31:0]           T_WDATA; // should be valid during T_WREN
     wire [31:0]           T_RDATA; // should be valid after one cycle from T_RDEN
     reg  [ 2:0]           T_SIZE;
     //-------------------------------------------------
     reg [2:0] state;
     localparam  STH_IDLE   = 3'h0,
-                STH_WRITE0 = 3'h1,
-                STH_WRITE1 = 3'h2,
-                STH_READ0  = 3'h3, 
-                STH_READ1  = 3'h4;
+                STH_WR = 3'h1,
+                STH_RD  = 3'h2;
     //-------------------------------------------------
     always @ (posedge HCLK or negedge HRESETn) begin
         if (!HRESETn) begin
-            HRDATA    <=  ~'h0;
+            // HRDATA    <=  ~'h0;
             HREADYout <=  1'b1;
             T_ADDR    <=   'h0;
             T_WREN    <=  1'b0;
-            T_RDEN    <=  1'b0;
-            T_WDATA   <=  ~'h0;
+            // T_RDEN    <=  1'b0;
+            T_WDATA   <=  32'h0;
             T_SIZE    <=  3'h0;
             state     <= STH_IDLE;
         end else begin
             case (state)
             STH_IDLE: begin
-                    T_RDEN    <= 1'b0;
+                    // T_RDEN    <= 1'b0;
                     T_WREN    <= 1'b0;
                     if (HSEL && HREADYin) begin
                     case (HTRANS)
                     2'b00, 2'b01: begin //`HTRANS_IDLE, `HTRANS_BUSY
                             HREADYout <= 1'b1;
-                            T_RDEN    <= 1'b0;
+                            // T_RDEN    <= 1'b0;
                             T_WREN    <= 1'b0;
                             state     <= STH_IDLE;
                         end // HTRANS_IDLE or HTRANS_BUSY
                     2'b10, 2'b11: begin //`HTRANS_NONSEQ, `HTRANS_SEQ
-                            HREADYout <= 1'b0;
+                            HREADYout <= 1'b1;
                             T_ADDR    <= HADDR[T_ADDR_WID-1:0];
                             T_SIZE    <= HSIZE;
                             if (HWRITE) begin // write
-                                state  <= STH_WRITE0;
+                                state  <= STH_WR;
                             end else begin // read
-                                T_RDEN <= 1'b1; //byte_enable(HADDR[1:0], HSIZE);
-                                state  <= STH_READ0;
+                                // T_RDEN <= 1'b1; //byte_enable(HADDR[1:0], HSIZE);
+                                state  <= STH_RD;
                             end
                         end // HTRANS_NONSEQ or HTRANS_SEQ
                     endcase // HTRANS
                     end else begin// if (HSEL && HREADYin)
                         T_WREN    <= 1'b0;
-                        T_RDEN    <= 1'b0;
+                        // T_RDEN    <= 1'b0;
                         HREADYout <= 1'b1;
                     end
             end // STH_IDLE
-            STH_WRITE0: begin
+            STH_WR: begin
                         T_WREN    <= 1'b1;
                         T_WDATA   <= HWDATA;
                         HREADYout <= 1'b1;
-                        state     <= STH_WRITE1;
-            end // STH_WRITE0
-            STH_WRITE1: begin
-                        T_WREN    <= 1'b0;
-                        T_WDATA   <= 32'b0;
-                        HREADYout <= 1'b1;
                         state     <= STH_IDLE;
-            end // STH_WRITE1
-            STH_READ0: begin
-                        T_RDEN    <= 1'b0;
-                        state     <= STH_READ1;
-            end // STH_READ0
-            STH_READ1: begin
+            end // STH_WR
+            STH_RD: begin
                         HREADYout <= 1'b1;
-                        HRDATA    <= T_RDATA;
+                        // HRDATA    <= T_RDATA;
                         state     <= STH_IDLE;
-            end // STH_READ1
+            end // STH_RD
             default: state <= STH_IDLE;
             endcase // state
         end // if (HRESETn==0)
     end // always
 
+    assign HRDATA = T_RDATA;
+
     // ---- ---- memory start ---- ----
-    parameter ADDR_WIDTH = 4;
+    parameter ADDR_WIDTH = T_ADDR_WID;
     parameter MEM_DEPTH = 2**ADDR_WIDTH;
 
     reg  [31:0] sram_mem[0:MEM_DEPTH-1];
@@ -174,11 +125,13 @@ module ahb_slave(
     assign waddr = T_ADDR;
     assign wdata = T_WDATA;
 
+    // synthesis translate_off
     integer i;
     initial begin
         for(i=0; i<MEM_DEPTH; i=i+1)
-            sram_mem[i] <= 32'b0;
+            sram_mem[i] <= i*2;
     end
+    // synthesis translate_on
 
     always @(posedge HCLK ) begin
         if(wren) sram_mem[waddr] <= wdata;
